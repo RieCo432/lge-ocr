@@ -6,37 +6,85 @@ import unicodedata
 import time
 from datetime import datetime
 
+lessonHours = ["7h55","8h50","9h55","10h50","11h45","12h35","13h30","14h25","15h20"]
+lessonEnds = ["8h45","9h40","10h45","11h40","12h35","13h25","14h20","15h15","16h10"]
+lessonDays = ["Lundi","Mardi","Mecredi","Jeudi","Vendredi"]
+classes = ["1A latine","1A","1B(F) latine","1B(F)","1(B)F","1C latine","1C","1D","1E","1D(G)","1(D)G","1G","2A latine","2A","2B latine","2B","2C latine","2C","2C(D) latine","2C(D)","2(C)D","2D(G)","2(D)G latine","2(D)G","2E(F)","2(E)F latine","2(E)F","2G2","3A classique","3A moderne","3B latine","3B","3B(C)","3(B)C","3C classique","3C moderne","3D1 latine","3D1","3D(G)","3(D)G","3E(F)","3(E)F classique","3(E)F","3G classique","3G","IV.1","41","IV.2","42","43","44","45","46","V.1","51","V.2","52","53","54","55","56","VI 1","61","VI 2","62","63","64","65","71","72","73","74","75","1ere,2e","2e","3eme","DECHARGES","DISPO","Activitees","6e"]
+
+def searchForStringFromArrayInString(array, string):
+    for index in array:
+        if(index in string):
+            return True
+            break
+    return False
+
+def searchForStringFromArrayInStringValue(array, string):
+    for index in array:
+        if(index in string):
+             return True, index
+             break
+    return False, None
+
 while True:
     initTimestamp = datetime.now()
 
-    i = 1
-    nr_slides = 30
-    all_text = ["","","","","","","","","","","","","","","","","","","","","","","","","","","","","","","",""]
+    summaryDetected = False
+    i = 3
+    nr_slides = 10
+    all_text = []
     while i <= nr_slides:
+        print(i)
 
-        urllib.urlretrieve("http://www.lge.lu/lgeapp/intranet/2006/1996/Slide"+str(i)+".JPG", "images/slide"+str(i)+".jpg")
-        os.system("convert images/slide"+str(i)+".jpg -resize 1800 images/slide"+str(i)+".tif")
+        #urllib.urlretrieve("http://www.lge.lu/lgeapp/intranet/2006/1996/Slide"+str(i)+".JPG", "images/slide"+str(i)+".jpg")
+        os.system("convert images/slide"+str(i)+".jpg -resize 2600 images/slide"+str(i)+".tif")
         text = image_to_string(Image.open("images/slide"+str(i)+".tif"))
 
+        completeHeader = ["<h4>"]
+        completeBody = ["<p>"]
+        completeText = ""
         linenr = 1
-        text_final = ""
-
+        finalText = ""
+        bool = False
         for line in text.split("\n"):
-            if(not(line == "" or line == " " or line == "  " or line == "   " or line == "    ")):
-                if(linenr == 1):
-                    text_final = text_final+"<h4>"+line+"</h4>\n<p>"
-                else:
-                    text_final = text_final+"<br>"+line
-            linenr = linenr + 1
-            all_text[i] = text_final + "</p>\n"
+            print(line)
+            if("Changements" in line):
+                bool = True
+                summaryDetected = True
+            if(searchForStringFromArrayInString(lessonHours, line)):
+                bool = True
+                break
+        if(bool == True and summaryDetected == True):
+            print("Found Keyword")
+            for line in text.split("\n"):
+                if(not(line == "" or line == " " or line == "  " or line == "   " or line == "    ")):
+                    isHeader, header = searchForStringFromArrayInStringValue(lessonDays, line)
+                    if(isHeader):
+                        completeHeader.append(header)
+                    isHeader, header = searchForStringFromArrayInStringValue(lessonHours, line)
+                    if(isHeader):
+                        completeHeader.append(" "+ str(header))
+                    isHeader, header = searchForStringFromArrayInStringValue(lessonEnds, line)
+                    if(isHeader):
+                        completeHeader.append("-" + str(header) + "</h4>")
+                    else:
+                        completeBody.append(str(line)+"</br>")
+            completeHeader.append("\n")
+            completeBody.append("</p>")
+            for string in completeHeader:
+                all_text.append(string)
+            for string in completeBody:
+                all_text.append(string)
 
-        i = i + 1
 
-    j = 1
+            completeText = ""
+            for string in all_text:
+                completeText = completeText + string
+        finalText =  finalText + completeText
+
+        i = i+1
+
     final_all_text = "<h4>Timestamp: "+time.strftime("%H:%M", time.localtime())+"</h4><br><br>\n"
-    while j <= nr_slides:
-        final_all_text = final_all_text + all_text[j]
-        j = j + 1
+    final_all_text = final_all_text + finalText
 
     text_file = open("/home/server/www/lge/intranet_trans.html", "w")
     text_file.write(final_all_text)
