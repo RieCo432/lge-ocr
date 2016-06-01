@@ -78,19 +78,16 @@ while True:
 
             completeText = ""
             for string in all_text:
-                completeText = completeText + string    
-
+                completeText = completeText + string
         finalText =  finalText + completeText
 
         i = i+1
 
     final_all_text = "<h4>Timestamp: "+time.strftime("%H:%M", time.localtime())+"</h4><br><br>\n"
-    timeDelta = datetime.now() - initTimestamp
-    timeDeltaSecs = timeDelta.total_seconds()
-    print(finalText)
     final_all_text = final_all_text + finalText
-    final_all_text =  final_all_text + "<br><br><p>Total time needed: " + str(timeDeltaSecs) + " seconds"
-
+    timeDelta = datetime.now() - initTimestamp
+    timeDeltaSecs = timeDelta.total_seconds
+    final_all_text = final_all_text + "<br><br><p>Total time needed: " + str(timeDeltaSecs) + " seconds</p>"
 
     text_file = open("/home/server/www/lge/intranet_trans.html", "w")
     text_file.write(final_all_text)
